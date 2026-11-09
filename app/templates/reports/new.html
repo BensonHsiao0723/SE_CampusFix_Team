@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Report a problem – CampusFix{% endblock %}
+{% block content %}
+<h1>Report a problem</h1>
+{# TODO CF-6: 這裡可加「先搜尋是否已有相同報修」的連結或面板 #}
+<form method="post" novalidate>
+  <label for="title">Title</label>
+  <input id="title" name="title" value="{{ form.get('title', '') }}">
+  {% if errors.title %}<p class="error">{{ errors.title }}</p>{% endif %}
+
+  <label for="location">Location</label>
+  <select id="location" name="location">
+    <option value="">-- choose --</option>
+    {% for loc in locations %}
+      <option {% if form.get('location') == loc %}selected{% endif %}>{{ loc }}</option>
+    {% endfor %}
+  </select>
+  {% if errors.location %}<p class="error">{{ errors.location }}</p>{% endif %}
+
+  <label for="category">Category</label>
+  <select id="category" name="category">
+    <option value="">-- choose --</option>
+    {% for cat in categories %}
+      <option {% if form.get('category') == cat %}selected{% endif %}>{{ cat }}</option>
+    {% endfor %}
+  </select>
+  {% if errors.category %}<p class="error">{{ errors.category }}</p>{% endif %}
+
+  <label for="description">Description</label>
+  <textarea id="description" name="description" rows="5">{{ form.get('description', '') }}</textarea>
+  {% if errors.description %}<p class="error">{{ errors.description }}</p>{% endif %}
+
+  <button type="submit">Submit report</button>
+</form>
+{% endblock %}

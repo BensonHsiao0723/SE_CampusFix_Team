@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Reports – CampusFix{% endblock %}
+{% block content %}
+<h1>Reports</h1>
+
+<form class="inline" method="get" action="{{ url_for('reports.lookup') }}">
+  <label for="id">Open report by ID</label>
+  <input id="id" name="id" inputmode="numeric">
+  <button type="submit">Open</button>
+</form>
+
+{# Sprint 2 (CF-9/CF-10)：搜尋表單已放好，後端邏輯在 reports.list_reports 的 TODO #}
+<form class="inline" method="get">
+  <input name="q" placeholder="Keyword" value="{{ keyword }}">
+  <select name="location">
+    <option value="">All locations</option>
+    {% for loc in locations %}
+      <option {% if location == loc %}selected{% endif %}>{{ loc }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Search</button>
+</form>
+
+{% if reports %}
+<table>
+  <thead><tr><th>ID</th><th>Title</th><th>Location</th><th>Category</th><th>Status</th><th>Submitted</th></tr></thead>
+  <tbody>
+  {% for r in reports %}
+    <tr>
+      <td><a href="{{ url_for('reports.detail', report_id=r['id']) }}">#{{ r['id'] }}</a></td>
+      <td>{{ r['title'] }}</td><td>{{ r['location'] }}</td><td>{{ r['category'] }}</td>
+      <td><span class="status">{{ r['status'] }}</span></td><td>{{ r['created_at'] }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">No reports yet.</p>
+{% endif %}
+{% endblock %}

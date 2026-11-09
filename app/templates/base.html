@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}CampusFix{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <a class="brand" href="{{ url_for('index') }}">CampusFix</a>
+    <nav>
+      <a href="{{ url_for('reports.list_reports') }}">Reports</a>
+      <a href="{{ url_for('reports.new_report') }}">Report a problem</a>
+      {% if g.user and g.user['role'] == 'staff' %}
+        <a href="{{ url_for('staff.dashboard') }}">Staff</a>
+      {% endif %}
+      {% if g.user %}
+        <span>{{ g.user['username'] }} ({{ g.user['role'] }})</span>
+        <a href="{{ url_for('auth.logout') }}">Log out</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}">Log in</a>
+      {% endif %}
+    </nav>
+  </header>
+  <main>
+    {% for message in get_flashed_messages() %}
+      <div class="flash">{{ message }}</div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

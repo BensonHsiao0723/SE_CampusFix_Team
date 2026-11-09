@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Report #{{ report['id'] }} – CampusFix{% endblock %}
+{% block content %}
+<h1>Report #{{ report['id'] }}: {{ report['title'] }}</h1>
+<dl>
+  <dt>Status</dt><dd><span class="status">{{ report['status'] }}</span></dd>
+  <dt>Location</dt><dd>{{ report['location'] }}</dd>
+  <dt>Category</dt><dd>{{ report['category'] }}</dd>
+  <dt>Description</dt><dd>{{ report['description'] }}</dd>
+  <dt>Submitted</dt><dd>{{ report['created_at'] }}</dd>
+  {# TODO CF-11: Resolved 時顯示 resolution_note 與 updated_at #}
+</dl>
+{% endblock %}

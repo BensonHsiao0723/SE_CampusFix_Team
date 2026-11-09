@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Staff – CampusFix{% endblock %}
+{% block content %}
+<h1>Staff: manage reports</h1>
+{# TODO CF-13: 每筆報修顯示一個表單，POST 到 staff.update_status #}
+{% for r in reports %}
+  <form class="card" method="post" action="{{ url_for('staff.update_status', report_id=r['id']) }}">
+    <strong>#{{ r['id'] }} {{ r['title'] }}</strong> ({{ r['location'] }})
+    <select name="status">
+      {% for s in statuses %}
+        <option {% if r['status'] == s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <textarea name="resolution_note" placeholder="Resolution note (required when Resolved)">{{ r['resolution_note'] or '' }}</textarea>
+    <button type="submit">Update</button>
+  </form>
+{% else %}
+  <p class="empty">No reports to manage.</p>
+{% endfor %}
+{% endblock %}
