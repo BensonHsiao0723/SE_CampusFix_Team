@@ -113,6 +113,27 @@ def test_tc09_staff_update_requires_resolution_note(client):
     """CF-13：staff 改成 Resolved 但沒填 note -> 被擋；填了 -> 成功。"""
 
 
-@TODO
-def test_tc10_student_cannot_update_status(client):
-    """CF-12/CF-13：student 或未登入者 POST 狀態更新 -> 403，資料不變。"""
+def test_tc10_student_cannot_update_status(app, client):
+    """CF-12/CF-13：student 或未登入者 POST 狀態更新 -> 403，資料不變。
+
+    CF-12 負責前半：伺服器端的權限檢查（staff_required）。
+    """
+    report_id = submit(client, VALID_REPORT)
+    update = {"status": "Resolved", "resolution_note": "Fixed"}
+
+    def current_status():
+        with app.app_context():
+            return get_db().execute(
+                "SELECT status FROM reports WHERE id = ?", (report_id,)).fetchone()["status"]
+
+    # 未登入：看 staff 頁面、送出狀態更新都被拒絕
+    assert client.get("/staff/").status_code == 403
+    assert client.post(f"/staff/reports/{report_id}/status", data=update).status_code == 403
+
+    # student 登入後：一樣被拒絕
+    login(client, "student1", "student123")
+    assert client.get("/staff/").status_code == 403
+    assert client.post(f"/staff/reports/{report_id}/status", data=update).status_code == 403
+
+    # 資料沒有被改
+    assert current_status() == "Submitted"
