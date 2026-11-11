@@ -7,6 +7,22 @@ from .db import get_db
 bp = Blueprint("reports", __name__, url_prefix="/reports")
 
 
+def validate_choices(form):
+    """CF-5：檢查 location 和 category 是否在固定清單內。
+
+    回傳錯誤訊息的 dict，例如 {"location": "..."}；全部正確時回傳空 dict。
+    空白的值不在這裡處理，留給 CF-4 的必填檢查，避免同一個欄位出現兩個錯誤訊息。
+    """
+    errors = {}
+    location = form.get("location", "")
+    category = form.get("category", "")
+    if location and location not in LOCATIONS:
+        errors["location"] = "Please choose a location from the list"
+    if category and category not in CATEGORIES:
+        errors["category"] = "Please choose a category from the list"
+    return errors
+
+
 @bp.route("/new", methods=["GET", "POST"])
 def new_report():
     errors = {}
