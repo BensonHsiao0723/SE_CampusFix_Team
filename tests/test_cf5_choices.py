@@ -1,16 +1,12 @@
 """CF-5：地點與分類只能從固定清單選擇（TC-15 ~ TC-19）。
 
-TC-15 ~ TC-17 直接測 validate_choices()，現在就能跑。
-TC-18 ~ TC-19 要透過網頁送出報修，必須等 CF-4（儲存報修）合併到 main、
-並在 new_report() 呼叫 validate_choices() 之後，才拿掉 skip。
+TC-15 ~ TC-17 直接測 validate_choices() 這個函式。
+TC-18 ~ TC-19 透過網頁送出報修，測 new_report() 真的有用到 validate_choices()
+（需要 CF-4 的儲存功能，CF-4 已合併到 main）。
 """
-import pytest
-
 from app.constants import CATEGORIES, LOCATIONS
 from app.db import get_db
 from app.reports import validate_choices
-
-WAIT_FOR_CF4 = pytest.mark.skip(reason="等 CF-4 合併後，new_report() 呼叫 validate_choices() 才能測")
 
 
 def test_tc15_values_from_lists_are_accepted():
@@ -37,7 +33,6 @@ def test_tc17_category_outside_list_is_rejected():
     assert set(errors) == {"location", "category"}
 
 
-@WAIT_FOR_CF4
 def test_tc18_server_rejects_value_outside_list(client, app):
     """TC-18：直接 POST 清單外的值 -> 不儲存，頁面顯示錯誤訊息。"""
     resp = client.post("/reports/new", data={
@@ -52,7 +47,6 @@ def test_tc18_server_rejects_value_outside_list(client, app):
     assert count == 0
 
 
-@WAIT_FOR_CF4
 def test_tc19_detail_page_shows_selected_choices(client):
     """TC-19：送出合法的報修 -> 詳細頁顯示所選的地點與分類。"""
     resp = client.post("/reports/new", data={

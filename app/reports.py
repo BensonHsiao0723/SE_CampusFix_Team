@@ -45,7 +45,8 @@ def new_report():
         if not description:
             errors["description"] = "Description is required"
 
-        # TODO CF-5: 檢查 location 和 category 是否在固定清單內
+        # CF-5：location 和 category 必須在固定清單內（用 strip() 後的值檢查，和存進資料庫的值一致）
+        errors.update(validate_choices({"location": location, "category": category}))
 
         # CF-4：沒有任何錯誤才寫進資料庫；有錯就往下走，重新顯示表單和錯誤訊息
         if not errors:
