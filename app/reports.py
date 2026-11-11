@@ -1,5 +1,5 @@
 """學生端：送出報修、列表、詳細頁、搜尋。對應 Story CF-4～CF-11。"""
-from flask import Blueprint, abort, flash, g, redirect, render_template, request, url_for
+from flask import Blueprint, flash, g, redirect, render_template, request, url_for
 
 from .constants import CATEGORIES, LOCATIONS, STATUS_SUBMITTED
 from .db import get_db
@@ -88,21 +88,45 @@ def list_reports():
 
 @bp.route("/lookup")
 def lookup():
-    """依使用者輸入的 ID 跳到詳細頁。"""
-    report_id = request.args.get("id", "").strip()
-    if not report_id.isdigit():
-        flash("Please enter a numeric report ID")
+    """CF-8：依使用者輸入的 ID 跳到詳細頁（AC2）。
+
+    列表上的 ID 顯示成 "#12"，所以輸入時也接受前面帶 "#"。
+    """
+    raw_id = request.args.get("id", "").strip()
+    report_id = raw_id.removeprefix("#").strip()
+    if not report_id:
+        flash("Please enter a report ID")
         return redirect(url_for("reports.list_reports"))
+    if not report_id.isascii() or not report_id.isdigit():
+        return report_not_found(raw_id)
     return redirect(url_for("reports.detail", report_id=int(report_id)))
+
+
+# SQLite INTEGER 的最大值；超過這個數字的 ID 不可能存在，直接當作找不到，
+# 避免 sqlite3 綁定參數時 OverflowError 變成 500。
+MAX_REPORT_ID = 2**63 - 1
 
 
 @bp.route("/<int:report_id>")
 def detail(report_id):
-    # TODO CF-8: 依 ID 讀出報修；找不到時顯示 "Report not found"（404）
+    """CF-8：顯示單筆報修的所有欄位與目前狀態（AC1、AC4）。"""
     # TODO CF-11 (Sprint 2): Resolved 的報修要顯示 resolution_note 與 updated_at
-    report = get_db().execute(
-        "SELECT * FROM reports WHERE id = ?", (report_id,)
-    ).fetchone()
+    report = None
+    if report_id <= MAX_REPORT_ID:
+        report = get_db().execute(
+            "SELECT * FROM reports WHERE id = ?", (report_id,)
+        ).fetchone()
     if report is None:
-        abort(404, description="Report not found")
+        return report_not_found(report_id)
     return render_template("reports/detail.html", report=report)
+
+
+@bp.route("/<path:raw_id>")
+def detail_invalid_id(raw_id):
+    """CF-8：/reports/abc、/reports/-1 這類不是正整數的 ID，也顯示 Report not found（AC3）。"""
+    return report_not_found(raw_id)
+
+
+def report_not_found(report_id):
+    """CF-8 AC3：有導覽列、清楚的 "Report not found" 頁面，回傳 404。"""
+    return render_template("reports/not_found.html", report_id=report_id), 404

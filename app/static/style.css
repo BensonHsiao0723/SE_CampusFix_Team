@@ -21,3 +21,5 @@ table { width: 100%; border-collapse: collapse; background: #fff; }
 th, td { padding: .5rem; border-bottom: 1px solid #e1e4e8; text-align: left; }
 dt { font-weight: 600; margin-top: .5rem; }
 dd { margin: 0 0 .25rem; }
+/* CF-8：描述照送出時的換行原樣顯示 */
+.multiline { white-space: pre-wrap; overflow-wrap: anywhere; }

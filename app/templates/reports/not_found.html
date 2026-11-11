@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}Report not found – CampusFix{% endblock %}
+{% block content %}
+<h1>Report not found</h1>
+<p class="card">
+  There is no report with ID <strong>{{ report_id }}</strong>.
+  Please check the ID and try again. Report IDs are whole numbers, e.g. 12.
+</p>
+
+<form class="inline" method="get" action="{{ url_for('reports.lookup') }}">
+  <label for="id">Open report by ID</label>
+  <input id="id" name="id" inputmode="numeric">
+  <button type="submit">Open</button>
+</form>
+
+<p><a href="{{ url_for('reports.list_reports') }}">&larr; Back to reports</a></p>
+{% endblock %}

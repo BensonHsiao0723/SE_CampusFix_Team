@@ -56,6 +56,9 @@ def test_tc19_detail_page_shows_selected_choices(client):
         "description": "Connection drops every few minutes on floor 3.",
     }, follow_redirects=True)
     assert resp.status_code == 200
-    # 用 <dd>…</dd> 比對，確定是詳細頁上的值，而不是表單下拉選單裡的選項
-    assert b"<dd>Dormitory 1</dd>" in resp.data
-    assert b"<dd>Wi-Fi/Network</dd>" in resp.data
+    # 比對詳細頁上 location / category 欄位的值，而不是表單下拉選單裡的選項
+    # （CF-8 審查時調整：不綁定 <dd> 的確切寫法，詳細頁版型改了也不會誤判）
+    from test_cf8_report_detail import shown_fields
+    shown = shown_fields(resp.get_data(as_text=True))
+    assert shown["location"] == "Dormitory 1"
+    assert shown["category"] == "Wi-Fi/Network"
