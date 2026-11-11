@@ -53,6 +53,7 @@ pytest -v
 - `tests/test_smoke.py`: checks that the skeleton starts and the pages load.
 - `tests/test_required_cases.py`: the 10 required test cases (TC-01 to TC-10), currently skipped.
   Remove the `skip` mark when you implement the related story.
+- `tests/test_cf12_auth.py`: sign-in and role checks for CF-12 (TC-25 to TC-29).
 
 ## Project structure
 
