@@ -55,10 +55,14 @@ def new_report():
 def list_reports():
     keyword = request.args.get("q", "").strip()
     location = request.args.get("location", "")
-    # TODO CF-7: 從資料庫讀出報修，最新的在最前面
+    # CF-7: 每次請求都直接查資料庫，所以新送出的報修不用重開程式就會出現。
+    #       created_at 只精確到秒，同一秒內送出的報修再用 id 由大到小排，確保最新的在最前面。
     # TODO CF-9 (Sprint 2): keyword 不分大小寫比對 title 或 description
     # TODO CF-10 (Sprint 2): location 篩選，與 keyword 同時使用時取 AND
-    reports = []
+    reports = get_db().execute(
+        "SELECT id, title, location, category, status, created_at"
+        " FROM reports ORDER BY created_at DESC, id DESC"
+    ).fetchall()
     return render_template(
         "reports/list.html", reports=reports,
         keyword=keyword, location=location, locations=LOCATIONS,
