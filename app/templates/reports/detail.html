@@ -1,13 +1,15 @@
 {% extends 'base.html' %}
 {% block title %}Report #{{ report['id'] }} – CampusFix{% endblock %}
 {% block content %}
+<p><a href="{{ url_for('reports.list_reports') }}">&larr; Back to reports</a></p>
 <h1>Report #{{ report['id'] }}: {{ report['title'] }}</h1>
-<dl>
-  <dt>Status</dt><dd><span class="status">{{ report['status'] }}</span></dd>
-  <dt>Location</dt><dd>{{ report['location'] }}</dd>
-  <dt>Category</dt><dd>{{ report['category'] }}</dd>
-  <dt>Description</dt><dd>{{ report['description'] }}</dd>
-  <dt>Submitted</dt><dd>{{ report['created_at'] }}</dd>
+<dl class="card report-detail">
+  <dt>Status</dt><dd><span class="status" data-field="status">{{ report['status'] }}</span></dd>
+  <dt>Title</dt><dd data-field="title">{{ report['title'] }}</dd>
+  <dt>Location</dt><dd data-field="location">{{ report['location'] }}</dd>
+  <dt>Category</dt><dd data-field="category">{{ report['category'] }}</dd>
+  <dt>Description</dt><dd class="multiline" data-field="description">{{ report['description'] }}</dd>
+  <dt>Submitted</dt><dd data-field="created_at">{{ report['created_at'] }}</dd>
   {# TODO CF-11: Resolved 時顯示 resolution_note 與 updated_at #}
 </dl>
 {% endblock %}

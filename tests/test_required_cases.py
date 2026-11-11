@@ -5,6 +5,7 @@
 """
 import pytest
 
+from app.db import get_db
 from conftest import login  # noqa: F401  (CF-12 完成後會用到)
 
 TODO = pytest.mark.skip(reason="TODO: implement together with the related story")
@@ -30,9 +31,35 @@ def test_tc04_persistence_after_restart(app):
     """CF-4/CF-13：寫入後重新 create_app（指向同一個 DATABASE）-> 資料仍在。"""
 
 
-@TODO
-def test_tc05_report_details_and_status(client):
-    """CF-8：詳細頁內容與送出時一致，狀態正確。"""
+def test_tc05_report_details_and_status(app, client):
+    """CF-8：詳細頁內容與送出時一致，狀態正確。
+
+    CF-4 完成前先直接在資料庫插入報修；內容刻意包含 HTML 特殊字元、引號、
+    中文與換行，確認畫面顯示的文字和存進去的完全相同（AC1、AC4）。
+    """
+    from test_cf8_report_detail import add_report, get_report_row, shown_fields
+
+    submitted = {
+        "title": 'Projector <b>broken</b> & "flickering"',
+        "location": "Library",
+        "category": "Equipment",
+        "description": "第一行：投影機不亮\nSecond line: it's been 3 days <script>x</script>",
+    }
+    report_id = add_report(app, **submitted)
+    saved = get_report_row(app, report_id)
+
+    resp = client.get(f"/reports/{report_id}")
+    assert resp.status_code == 200
+    shown = shown_fields(resp.get_data(as_text=True))
+    assert shown == {**submitted, "status": "Submitted", "created_at": saved["created_at"]}
+
+    # 狀態改變後，詳細頁顯示的是目前狀態
+    with app.app_context():
+        db = get_db()
+        db.execute("UPDATE reports SET status = 'In Progress' WHERE id = ?", (report_id,))
+        db.commit()
+    shown = shown_fields(client.get(f"/reports/{report_id}").get_data(as_text=True))
+    assert shown["status"] == "In Progress"
 
 
 @TODO
