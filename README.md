@@ -54,6 +54,7 @@ pytest -v
 - `tests/test_required_cases.py`: the 10 required test cases (TC-01 to TC-10), currently skipped.
   Remove the `skip` mark when you implement the related story.
 - `tests/test_cf12_auth.py`: sign-in and role checks for CF-12 (TC-25 to TC-29).
+- `tests/test_cf9_search.py`: keyword search for CF-9 (TC-30 to TC-33).
 
 ## Project structure
 
