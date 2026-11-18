@@ -2,16 +2,24 @@
 {% block title %}Staff – CampusFix{% endblock %}
 {% block content %}
 <h1>Staff: manage reports</h1>
-{# TODO CF-13: 每筆報修顯示一個表單，POST 到 staff.update_status #}
+{# CF-13：每筆報修一個表單，POST 到 staff.update_status；只有 staff 進得來這頁 #}
 {% for r in reports %}
   <form class="card" method="post" action="{{ url_for('staff.update_status', report_id=r['id']) }}">
-    <strong>#{{ r['id'] }} {{ r['title'] }}</strong> ({{ r['location'] }})
-    <select name="status">
+    <strong><a href="{{ url_for('reports.detail', report_id=r['id']) }}">#{{ r['id'] }}</a> {{ r['title'] }}</strong>
+    ({{ r['location'] }}) –
+    current status: <span class="status" data-field="status-{{ r['id'] }}">{{ r['status'] }}</span>
+    <span class="empty">· last updated {{ r['updated_at'] }}</span>
+
+    <label for="status-{{ r['id'] }}">New status</label>
+    <select id="status-{{ r['id'] }}" name="status">
       {% for s in statuses %}
         <option {% if r['status'] == s %}selected{% endif %}>{{ s }}</option>
       {% endfor %}
     </select>
-    <textarea name="resolution_note" placeholder="Resolution note (required when Resolved)">{{ r['resolution_note'] or '' }}</textarea>
+
+    <label for="note-{{ r['id'] }}">Resolution note <span class="empty">(required when Resolved)</span></label>
+    <textarea id="note-{{ r['id'] }}" name="resolution_note" rows="2">{{ r['resolution_note'] or '' }}</textarea>
+
     <button type="submit">Update</button>
   </form>
 {% else %}
