@@ -119,9 +119,22 @@ def test_tc05_report_details_and_status(app, client):
     assert shown["status"] == "In Progress"
 
 
-@TODO
 def test_tc06_keyword_search_case_insensitive(client):
     """CF-9：'wifi' / 'WiFi' / 'WIFI' 結果相同，title 與 description 都會比對。"""
+    submit(client, dict(VALID_REPORT, title="WiFi not working"))              # title 有 WiFi
+    submit(client, dict(VALID_REPORT, title="Slow internet",
+                        description="The wifi in the library drops often."))  # 只有 description 有 wifi
+    submit(client, dict(VALID_REPORT, title="Broken chair",
+                        description="A leg of the chair is broken."))          # 都沒有
+
+    results = []
+    for keyword in ["wifi", "WiFi", "WIFI"]:
+        html = client.get("/reports/", query_string={"q": keyword}).get_data(as_text=True)
+        assert "WiFi not working" in html
+        assert "Slow internet" in html
+        assert "Broken chair" not in html
+        results.append([t for t in ["WiFi not working", "Slow internet", "Broken chair"] if t in html])
+    assert results[0] == results[1] == results[2]  # 三種寫法結果完全相同
 
 
 @TODO
@@ -129,9 +142,16 @@ def test_tc07_location_filter(client):
     """CF-10：只顯示所選地點；keyword + location 取 AND。"""
 
 
-@TODO
 def test_tc08_search_no_matches(client):
-    """CF-9/CF-10：沒有符合的結果 -> 顯示 'No matching reports'。"""
+    """CF-9/CF-10：沒有符合的結果 -> 顯示 'No matching reports'。
+
+    CF-9 負責關鍵字的部分；地點的部分由 CF-10 補上。
+    """
+    submit(client, VALID_REPORT)  # 有一筆報修，但不含 elevator
+    html = client.get("/reports/", query_string={"q": "elevator"}).get_data(as_text=True)
+    assert "No matching reports" in html
+    assert "Projector not working" not in html
+    # TODO CF-10：加上「地點沒有符合」以及「關鍵字 + 地點沒有符合」的情況
 
 
 def test_tc09_staff_update_requires_resolution_note(app, client):

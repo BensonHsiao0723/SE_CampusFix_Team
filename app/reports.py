@@ -74,12 +74,25 @@ def list_reports():
     location = request.args.get("location", "")
     # CF-7: 每次請求都直接查資料庫，所以新送出的報修不用重開程式就會出現。
     #       created_at 只精確到秒，同一秒內送出的報修再用 id 由大到小排，確保最新的在最前面。
-    # TODO CF-9 (Sprint 2): keyword 不分大小寫比對 title 或 description
     # TODO CF-10 (Sprint 2): location 篩選，與 keyword 同時使用時取 AND
-    reports = get_db().execute(
-        "SELECT id, title, location, category, status, created_at"
-        " FROM reports ORDER BY created_at DESC, id DESC"
-    ).fetchall()
+    sql = "SELECT id, title, location, category, status, created_at FROM reports"
+    params = []
+
+    # CF-9：有輸入關鍵字才加條件；keyword 上面已經 strip() 過，只有空白就等於沒輸入，顯示全部（AC3）
+    if keyword:
+        # % 和 _ 在 LIKE 裡是萬用字元，先在前面加 \ 讓它們變成一般文字，
+        # 這樣搜尋 "100%" 只會找到真的含有 "100%" 的報修，而不是全部
+        escaped = keyword.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        pattern = f"%{escaped}%"  # 前後加 %：只要「包含」關鍵字就算符合
+        # LIKE 對英文字母不分大小寫，所以 wifi / WiFi / WIFI 結果相同（AC2）
+        # title 或 description 任一個包含關鍵字就符合（AC1）
+        sql += " WHERE (title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\')"
+        params += [pattern, pattern]
+
+    # CF-7：最新的排最前面
+    sql += " ORDER BY created_at DESC, id DESC"
+    # 用 ? 代入使用者輸入，不直接拼進 SQL 字串，避免 SQL injection
+    reports = get_db().execute(sql, params).fetchall()
     return render_template(
         "reports/list.html", reports=reports,
         keyword=keyword, location=location, locations=LOCATIONS,
