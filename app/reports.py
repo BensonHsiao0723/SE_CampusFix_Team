@@ -7,6 +7,46 @@ from .db import get_db
 bp = Blueprint("reports", __name__, url_prefix="/reports")
 
 
+def search_reports(keyword="", location=""):
+    """CF-9、CF-10 的搜尋規則（CF-6 抽成共用函式，列表頁和報修表單都用這一個）。
+
+    - keyword：比對 title 或 description，不分大小寫；空字串代表不篩選（CF-9）
+    - location：地點完全相同才符合；空字串代表 All locations（CF-10）
+    - 兩個條件同時使用時取 AND（CF-10 AC2）
+    呼叫前請先 strip()。回傳依送出時間由新到舊排序的報修（CF-7）。
+    """
+    sql = "SELECT id, title, location, category, status, created_at FROM reports"
+    params = []
+    # CF-10：每個篩選條件各放一個，最後用 AND 接起來，
+    #        所以 keyword 和 location 同時使用時，兩個條件都要符合（AC2）
+    conditions = []
+
+    # CF-9：有輸入關鍵字才加條件；keyword 已經 strip() 過，只有空白就等於沒輸入，顯示全部（AC3）
+    if keyword:
+        # % 和 _ 在 LIKE 裡是萬用字元，先在前面加 \ 讓它們變成一般文字，
+        # 這樣搜尋 "100%" 只會找到真的含有 "100%" 的報修，而不是全部
+        escaped = keyword.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        pattern = f"%{escaped}%"  # 前後加 %：只要「包含」關鍵字就算符合
+        # LIKE 對英文字母不分大小寫，所以 wifi / WiFi / WIFI 結果相同（AC2）
+        # title 或 description 任一個包含關鍵字就符合（AC1）
+        conditions.append("(title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\')")
+        params += [pattern, pattern]
+
+    # CF-10：有選地點才加條件；地點要完全相同才算符合（AC1）
+    if location:
+        conditions.append("location = ?")
+        params.append(location)
+
+    # CF-10：有任何條件才加 WHERE；兩個條件都有時變成 "... WHERE (關鍵字) AND location = ?"
+    if conditions:
+        sql += " WHERE " + " AND ".join(conditions)
+
+    # CF-7：最新的排最前面；created_at 只精確到秒，同一秒內再用 id 由大到小排
+    sql += " ORDER BY created_at DESC, id DESC"
+    # 用 ? 代入使用者輸入，不直接拼進 SQL 字串，避免 SQL injection
+    return get_db().execute(sql, params).fetchall()
+
+
 def validate_choices(form):
     """CF-5：檢查 location 和 category 是否在固定清單內。
 
@@ -61,10 +101,18 @@ def new_report():
             report_id = cursor.lastrowid  # 資料庫自動產生的唯一 ID
             flash(f"Report #{report_id} submitted. Status: {STATUS_SUBMITTED}")
             return redirect(url_for("reports.detail", report_id=report_id))
-    # TODO CF-6 (Sprint 2): 在表單頁提供「先搜尋現有報修」
+    # CF-6：表單上方的「送出前先查查看」面板。用 check_q / check_location 當參數名稱，
+    #       避免和下面報修表單的 location 欄位混在一起。
+    check_q = request.args.get("check_q", "").strip()
+    check_location = request.args.get("check_location", "").strip()
+    checked = "check_q" in request.args or "check_location" in request.args
+    # AC4：和列表頁用同一個 search_reports()，規則完全相同
+    similar = search_reports(check_q, check_location) if checked else []
     return render_template(
         "reports/new.html", form=form, errors=errors,
         locations=LOCATIONS, categories=CATEGORIES,
+        check_q=check_q, check_location=check_location,
+        checked=checked, similar=similar,
     )
 
 
@@ -74,37 +122,8 @@ def list_reports():
     # CF-10：下拉選單的 "All locations" 送出的是空字串 ""，代表不篩選地點（AC3）
     location = request.args.get("location", "").strip()
     # CF-7: 每次請求都直接查資料庫，所以新送出的報修不用重開程式就會出現。
-    #       created_at 只精確到秒，同一秒內送出的報修再用 id 由大到小排，確保最新的在最前面。
-    sql = "SELECT id, title, location, category, status, created_at FROM reports"
-    params = []
-    # CF-10：每個篩選條件各放一個，最後用 AND 接起來，
-    #        所以 keyword 和 location 同時使用時，兩個條件都要符合（AC2）
-    conditions = []
-
-    # CF-9：有輸入關鍵字才加條件；keyword 上面已經 strip() 過，只有空白就等於沒輸入，顯示全部（AC3）
-    if keyword:
-        # % 和 _ 在 LIKE 裡是萬用字元，先在前面加 \ 讓它們變成一般文字，
-        # 這樣搜尋 "100%" 只會找到真的含有 "100%" 的報修，而不是全部
-        escaped = keyword.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
-        pattern = f"%{escaped}%"  # 前後加 %：只要「包含」關鍵字就算符合
-        # LIKE 對英文字母不分大小寫，所以 wifi / WiFi / WIFI 結果相同（AC2）
-        # title 或 description 任一個包含關鍵字就符合（AC1）
-        conditions.append("(title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\')")
-        params += [pattern, pattern]
-
-    # CF-10：有選地點才加條件；地點要完全相同才算符合（AC1）
-    if location:
-        conditions.append("location = ?")
-        params.append(location)
-
-    # CF-10：有任何條件才加 WHERE；兩個條件都有時變成 "... WHERE (關鍵字) AND location = ?"
-    if conditions:
-        sql += " WHERE " + " AND ".join(conditions)
-
-    # CF-7：最新的排最前面
-    sql += " ORDER BY created_at DESC, id DESC"
-    # 用 ? 代入使用者輸入，不直接拼進 SQL 字串，避免 SQL injection
-    reports = get_db().execute(sql, params).fetchall()
+    # CF-9、CF-10 的搜尋規則已由 CF-6 抽成 search_reports()（行為不變）
+    reports = search_reports(keyword, location)
     return render_template(
         "reports/list.html", reports=reports,
         keyword=keyword, location=location, locations=LOCATIONS,
