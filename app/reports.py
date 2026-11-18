@@ -71,12 +71,15 @@ def new_report():
 @bp.route("/")
 def list_reports():
     keyword = request.args.get("q", "").strip()
-    location = request.args.get("location", "")
+    # CF-10：下拉選單的 "All locations" 送出的是空字串 ""，代表不篩選地點（AC3）
+    location = request.args.get("location", "").strip()
     # CF-7: 每次請求都直接查資料庫，所以新送出的報修不用重開程式就會出現。
     #       created_at 只精確到秒，同一秒內送出的報修再用 id 由大到小排，確保最新的在最前面。
-    # TODO CF-10 (Sprint 2): location 篩選，與 keyword 同時使用時取 AND
     sql = "SELECT id, title, location, category, status, created_at FROM reports"
     params = []
+    # CF-10：每個篩選條件各放一個，最後用 AND 接起來，
+    #        所以 keyword 和 location 同時使用時，兩個條件都要符合（AC2）
+    conditions = []
 
     # CF-9：有輸入關鍵字才加條件；keyword 上面已經 strip() 過，只有空白就等於沒輸入，顯示全部（AC3）
     if keyword:
@@ -86,8 +89,17 @@ def list_reports():
         pattern = f"%{escaped}%"  # 前後加 %：只要「包含」關鍵字就算符合
         # LIKE 對英文字母不分大小寫，所以 wifi / WiFi / WIFI 結果相同（AC2）
         # title 或 description 任一個包含關鍵字就符合（AC1）
-        sql += " WHERE (title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\')"
+        conditions.append("(title LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\')")
         params += [pattern, pattern]
+
+    # CF-10：有選地點才加條件；地點要完全相同才算符合（AC1）
+    if location:
+        conditions.append("location = ?")
+        params.append(location)
+
+    # CF-10：有任何條件才加 WHERE；兩個條件都有時變成 "... WHERE (關鍵字) AND location = ?"
+    if conditions:
+        sql += " WHERE " + " AND ".join(conditions)
 
     # CF-7：最新的排最前面
     sql += " ORDER BY created_at DESC, id DESC"

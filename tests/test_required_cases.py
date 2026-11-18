@@ -139,9 +139,25 @@ def test_tc06_keyword_search_case_insensitive(client):
     assert results[0] == results[1] == results[2]  # 三種寫法結果完全相同
 
 
-@TODO
 def test_tc07_location_filter(client):
     """CF-10：只顯示所選地點；keyword + location 取 AND。"""
+    submit(client, dict(VALID_REPORT, title="Library wifi", location="Library",
+                        description="The wifi is slow."))
+    submit(client, dict(VALID_REPORT, title="Library chair", location="Library",
+                        description="A chair is broken."))
+    submit(client, dict(VALID_REPORT, title="Building A wifi", location="Building A",
+                        description="No wifi signal."))
+
+    def shown(**query):
+        html = client.get("/reports/", query_string=query).get_data(as_text=True)
+        return [t for t in ["Library wifi", "Library chair", "Building A wifi"] if t in html]
+
+    # 只選地點：只顯示該地點的報修
+    assert shown(location="Library") == ["Library wifi", "Library chair"]
+    # 關鍵字 + 地點：兩個都要符合（AND）
+    assert shown(q="wifi", location="Library") == ["Library wifi"]
+    # All locations（空字串）：不篩選地點
+    assert shown(q="wifi", location="") == ["Library wifi", "Building A wifi"]
 
 
 def test_tc08_search_no_matches(client):
@@ -153,7 +169,15 @@ def test_tc08_search_no_matches(client):
     html = client.get("/reports/", query_string={"q": "elevator"}).get_data(as_text=True)
     assert "No matching reports" in html
     assert "Projector not working" not in html
-    # TODO CF-10：加上「地點沒有符合」以及「關鍵字 + 地點沒有符合」的情況
+
+    # CF-10：VALID_REPORT 在 Building A
+    # 地點沒有符合
+    html = client.get("/reports/", query_string={"location": "Library"}).get_data(as_text=True)
+    assert "No matching reports" in html
+    # 關鍵字和地點各自有符合的報修，但沒有同時符合的（AND）
+    html = client.get("/reports/", query_string={"q": "projector", "location": "Library"}).get_data(as_text=True)
+    assert "No matching reports" in html
+    assert "Projector not working" not in html
 
 
 def test_tc09_staff_update_requires_resolution_note(app, client):
