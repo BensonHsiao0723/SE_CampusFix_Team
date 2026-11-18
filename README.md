@@ -55,6 +55,7 @@ pytest -v
   Remove the `skip` mark when you implement the related story.
 - `tests/test_cf12_auth.py`: sign-in and role checks for CF-12 (TC-25 to TC-29).
 - `tests/test_cf9_search.py`: keyword search for CF-9 (TC-35 to TC-38).
+- `tests/test_cf10_location_filter.py`: location filter for CF-10 (TC-51 to TC-55).
 
 ## Project structure
 

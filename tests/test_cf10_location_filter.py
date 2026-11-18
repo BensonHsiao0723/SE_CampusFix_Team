@@ -1,4 +1,4 @@
-"""CF-10 Filter reports by location (combined with keyword) 的測試。
+"""CF-10 Filter reports by location (combined with keyword) 的測試（對應測試紀錄 TC-51～TC-55）。
 
 必測案例 TC-07（地點篩選、keyword + location 取 AND）與 TC-08 的地點部分
 在 test_required_cases.py。這裡只用虛構的測試資料。
@@ -23,7 +23,7 @@ def add_sample_reports(app):
     add_report(app, "Broken chair", "2026-11-18 11:00:00", location="Library")
 
 
-def test_cf10_only_selected_location_is_shown(app, client):
+def test_tc51_only_selected_location_is_shown(app, client):
     """AC1：選了地點，只顯示該地點的報修。"""
     add_sample_reports(app)
 
@@ -37,7 +37,7 @@ def test_cf10_only_selected_location_is_shown(app, client):
     assert "Wifi slow" not in html and "Broken chair" not in html
 
 
-def test_cf10_keyword_and_location_must_both_match(app, client):
+def test_tc52_keyword_and_location_must_both_match(app, client):
     """AC2：keyword 和 location 同時使用時取 AND，兩個條件都要符合。"""
     add_sample_reports(app)
 
@@ -47,7 +47,7 @@ def test_cf10_keyword_and_location_must_both_match(app, client):
     assert "Broken chair" not in html   # 在 Library 但不含 wifi -> 不顯示
 
 
-def test_cf10_all_locations_removes_location_filter(app, client):
+def test_tc53_all_locations_removes_location_filter(app, client):
     """AC3：選 All locations（送出空字串）就不篩選地點。"""
     add_sample_reports(app)
 
@@ -61,7 +61,7 @@ def test_cf10_all_locations_removes_location_filter(app, client):
     assert "Broken chair" not in html
 
 
-def test_cf10_keyword_and_location_stay_visible(app, client):
+def test_tc54_keyword_and_location_stay_visible(app, client):
     """AC4：結果出來後，搜尋框仍是剛輸入的關鍵字，下拉選單仍選著剛選的地點。"""
     add_sample_reports(app)
 
@@ -75,7 +75,7 @@ def test_cf10_keyword_and_location_stay_visible(app, client):
     assert "<option selected>" not in html
 
 
-def test_cf10_no_match_shows_message(app, client):
+def test_tc55_no_match_shows_message(app, client):
     """沒有符合的結果時顯示 No matching reports（不是 CF-7 的 No reports yet.）。"""
     add_sample_reports(app)
 
