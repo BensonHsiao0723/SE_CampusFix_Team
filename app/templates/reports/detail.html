@@ -10,6 +10,11 @@
   <dt>Category</dt><dd data-field="category">{{ report['category'] }}</dd>
   <dt>Description</dt><dd class="multiline" data-field="description">{{ report['description'] }}</dd>
   <dt>Submitted</dt><dd data-field="created_at">{{ report['created_at'] }}</dd>
-  {# TODO CF-11: Resolved 時顯示 resolution_note 與 updated_at #}
+  {# CF-11 AC2：顯示狀態最後一次更新的時間（staff 在 CF-13 改狀態時會更新 updated_at） #}
+  <dt>Last updated</dt><dd data-field="updated_at">{{ report['updated_at'] }}</dd>
+  {# CF-11 AC1、AC3：只有 Resolved 且有處理說明時才顯示，show_resolution 在 reports.py 的 detail() 算好 #}
+  {% if show_resolution %}
+  <dt>Resolution note</dt><dd class="multiline" data-field="resolution_note">{{ report['resolution_note'] }}</dd>
+  {% endif %}
 </dl>
 {% endblock %}

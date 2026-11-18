@@ -108,7 +108,9 @@ def test_tc05_report_details_and_status(app, client):
     resp = client.get(f"/reports/{report_id}")
     assert resp.status_code == 200
     shown = shown_fields(resp.get_data(as_text=True))
-    assert shown == {**submitted, "status": "Submitted", "created_at": saved["created_at"]}
+    # CF-11 起詳細頁多顯示最後更新時間（updated_at）
+    assert shown == {**submitted, "status": "Submitted", "created_at": saved["created_at"],
+                     "updated_at": saved["updated_at"]}
 
     # 狀態改變後，詳細頁顯示的是目前狀態
     with app.app_context():
