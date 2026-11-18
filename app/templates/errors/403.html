@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Access denied – CampusFix{% endblock %}
+{% block content %}
+<h1>Access denied</h1>
+<p class="card">
+  This page is only available to <strong>staff</strong>.
+  {% if g.user %}
+    You are signed in as <strong>{{ g.user['username'] }}</strong> ({{ g.user['role'] }}),
+    which cannot manage reports.
+  {% else %}
+    You are not signed in.
+  {% endif %}
+</p>
+
+<p>
+  {% if g.user %}
+    <a href="{{ url_for('auth.logout') }}">Log out</a> and sign in with a staff account,
+    or
+  {% else %}
+    <a href="{{ url_for('auth.login') }}">Log in</a> with a staff account, or
+  {% endif %}
+  <a href="{{ url_for('reports.list_reports') }}">&larr; go back to the report list</a>.
+</p>
+{% endblock %}

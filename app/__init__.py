@@ -1,7 +1,7 @@
 """CampusFix Flask 應用程式（application factory）。"""
 import os
 
-from flask import Flask, redirect, url_for
+from flask import Flask, redirect, render_template, url_for
 
 
 def create_app(test_config=None):
@@ -26,5 +26,13 @@ def create_app(test_config=None):
     @app.route("/")
     def index():
         return redirect(url_for("reports.list_reports"))
+
+    @app.errorhandler(403)
+    def access_denied(error):
+        """CF-21：被 staff_required 擋下時，顯示有導覽列的說明頁，而不是 Flask 預設的 Forbidden 頁。
+
+        仍然回傳 403（驗收條件 3），頁面上不放任何 staff 才看得到的資料。
+        """
+        return render_template("errors/403.html"), 403
 
     return app
