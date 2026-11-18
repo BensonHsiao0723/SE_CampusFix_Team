@@ -1,7 +1,7 @@
 """學生端：送出報修、列表、詳細頁、搜尋。對應 Story CF-4～CF-11。"""
 from flask import Blueprint, flash, g, redirect, render_template, request, url_for
 
-from .constants import CATEGORIES, LOCATIONS, STATUS_SUBMITTED
+from .constants import CATEGORIES, LOCATIONS, STATUS_RESOLVED, STATUS_SUBMITTED
 from .db import get_db
 
 bp = Blueprint("reports", __name__, url_prefix="/reports")
@@ -122,8 +122,10 @@ MAX_REPORT_ID = 2**63 - 1
 
 @bp.route("/<int:report_id>")
 def detail(report_id):
-    """CF-8：顯示單筆報修的所有欄位與目前狀態（AC1、AC4）。"""
-    # TODO CF-11 (Sprint 2): Resolved 的報修要顯示 resolution_note 與 updated_at
+    """CF-8：顯示單筆報修的所有欄位與目前狀態（AC1、AC4）。
+
+    CF-11：另外顯示最後更新時間；Resolved 的報修再顯示處理說明。
+    """
     report = None
     if report_id <= MAX_REPORT_ID:
         report = get_db().execute(
@@ -131,7 +133,13 @@ def detail(report_id):
         ).fetchone()
     if report is None:
         return report_not_found(report_id)
-    return render_template("reports/detail.html", report=report)
+    # CF-11 AC1、AC3：只有「狀態是 Resolved 而且真的有處理說明」才顯示處理說明區塊，
+    # 其他狀態（Submitted、In Progress）不會出現空白的處理說明欄位。
+    # In Progress 就算有說明也不顯示（PO 授權的設計決定）：Resolved 改回 In Progress 時，
+    # CF-13 的表單會沿用舊的說明，若照樣顯示，學生會看到「已修好」的過期說明。
+    show_resolution = report["status"] == STATUS_RESOLVED and bool(report["resolution_note"])
+    return render_template("reports/detail.html", report=report,
+                           show_resolution=show_resolution)
 
 
 @bp.route("/<path:raw_id>")
