@@ -2,7 +2,44 @@
 {% block title %}Report a problem – CampusFix{% endblock %}
 {% block content %}
 <h1>Report a problem</h1>
-{# TODO CF-6: 這裡可加「先搜尋是否已有相同報修」的連結或面板 #}
+{# CF-6：送出前先查查看有沒有人已經回報過同樣的問題 #}
+<section class="card" id="check-existing">
+  <h2>Check existing reports first</h2>
+  <p>Someone may have reported the same problem already. Search by keyword and location before you submit.</p>
+  <form class="inline" method="get" action="{{ url_for('reports.new_report') }}#check-existing">
+    <input name="check_q" placeholder="Keyword" value="{{ check_q }}" aria-label="Keyword">
+    <select name="check_location" aria-label="Location">
+      <option value="">All locations</option>
+      {% for loc in locations %}
+        <option {% if check_location == loc %}selected{% endif %}>{{ loc }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Check</button>
+  </form>
+
+  {% if checked %}
+    {% if similar %}
+    <p><strong>{{ similar|length }} existing report(s) found.</strong> If one of them is your problem, open it instead of submitting a new one.</p>
+    <table>
+      <thead><tr><th>ID</th><th>Title</th><th>Location</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for r in similar %}
+        <tr>
+          <td><a href="{{ url_for('reports.detail', report_id=r['id']) }}">#{{ r['id'] }}</a></td>
+          <td>{{ r['title'] }}</td><td>{{ r['location'] }}</td>
+          <td><span class="status">{{ r['status'] }}</span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p>Not the same problem? You can still submit a new report below.</p>
+    {% else %}
+    <p class="empty">No matching reports. You can submit a new report below.</p>
+    {% endif %}
+  {% endif %}
+</section>
+
+<h2>New report</h2>
 <form method="post" novalidate>
   <label for="title">Title</label>
   <input id="title" name="title" value="{{ form.get('title', '') }}">
