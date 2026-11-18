@@ -134,9 +134,29 @@ def test_tc08_search_no_matches(client):
     """CF-9/CF-10：沒有符合的結果 -> 顯示 'No matching reports'。"""
 
 
-@TODO
-def test_tc09_staff_update_requires_resolution_note(client):
+def test_tc09_staff_update_requires_resolution_note(app, client):
     """CF-13：staff 改成 Resolved 但沒填 note -> 被擋；填了 -> 成功。"""
+    report_id = submit(client, VALID_REPORT)
+    login(client, "staff1", "staff123")
+    url = f"/staff/reports/{report_id}/status"
+
+    def current():
+        with app.app_context():
+            row = get_db().execute(
+                "SELECT status, resolution_note FROM reports WHERE id = ?", (report_id,)).fetchone()
+        return row["status"], row["resolution_note"]
+
+    # 沒填處理說明 -> 被擋下，顯示清楚的訊息，資料不變
+    resp = client.post(url, data={"status": "Resolved", "resolution_note": ""},
+                       follow_redirects=True)
+    assert b"A resolution note is required when the status is Resolved." in resp.data
+    assert current() == ("Submitted", None)
+
+    # 填了處理說明 -> 成功，狀態變 Resolved，說明也存起來
+    resp = client.post(url, data={"status": "Resolved", "resolution_note": "Projector replaced."},
+                       follow_redirects=True)
+    assert f"Report #{report_id} updated to Resolved.".encode() in resp.data
+    assert current() == ("Resolved", "Projector replaced.")
 
 
 def test_tc10_student_cannot_update_status(app, client):
