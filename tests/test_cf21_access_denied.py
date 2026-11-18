@@ -1,4 +1,4 @@
-"""CF-21 Show a friendly access-denied page 的測試（對應測試紀錄 TC-30～TC-33）。
+"""CF-21 Show a friendly access-denied page 的測試（對應測試紀錄 TC-39～TC-42）。
 
 CF-12 的權限檢查（staff_required）已經會回傳 403；
 CF-21 只改變被擋下時「看到的頁面」，所以也要確認 CF-12 的行為沒有被改壞。
@@ -9,7 +9,7 @@ from conftest import login
 NAV_LINK = 'href="/reports/new"'  # base.html 導覽列的 "Report a problem"
 
 
-def test_tc30_signed_out_user_sees_friendly_page(client):
+def test_tc39_signed_out_user_sees_friendly_page(client):
     """AC1/AC2/AC3：未登入開 staff 頁 -> 403，有導覽列、說明只有 staff 能進，並提供 Log in 與回列表的連結。"""
     resp = client.get("/staff/")
     html = resp.get_data(as_text=True)
@@ -23,7 +23,7 @@ def test_tc30_signed_out_user_sees_friendly_page(client):
     assert "Forbidden" not in html  # 不再是 Flask 預設頁面
 
 
-def test_tc31_student_sees_who_is_signed_in(client):
+def test_tc40_student_sees_who_is_signed_in(client):
     """AC1/AC2：student 開 staff 頁 -> 403，頁面說明目前登入的是 student，並提供 Log out 的連結。"""
     login(client, "student1", "student123")
     resp = client.get("/staff/")
@@ -35,7 +35,7 @@ def test_tc31_student_sees_who_is_signed_in(client):
     assert "Staff: manage reports" not in html  # 沒有顯示任何 staff 頁面內容
 
 
-def test_tc32_student_status_update_is_still_rejected(app, client):
+def test_tc41_student_status_update_is_still_rejected(app, client):
     """AC3：student 直接送出狀態更新 -> 403 友善頁面，資料庫中的報修完全沒變。"""
     with app.app_context():
         db = get_db()
@@ -57,7 +57,7 @@ def test_tc32_student_status_update_is_still_rejected(app, client):
     assert after == before
 
 
-def test_tc33_staff_can_still_open_staff_page(client):
+def test_tc42_staff_can_still_open_staff_page(client):
     """AC4：staff 仍然可以正常進入 staff 頁（CF-12 的行為沒有被改壞）。"""
     login(client, "staff1", "staff123")
     resp = client.get("/staff/")
