@@ -34,8 +34,8 @@
   {% endfor %}
   </tbody>
 </table>
-{% elif keyword %}
-{# CF-9 AC4：有輸入關鍵字但沒有符合的報修 #}
+{% elif keyword or location %}
+{# CF-9 AC4 / CF-10：有輸入關鍵字或選了地點，但沒有符合的報修 #}
 <p class="empty">No matching reports</p>
 {% else %}
 {# CF-7：資料庫裡還沒有任何報修 #}
